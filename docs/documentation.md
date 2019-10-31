@@ -42,7 +42,7 @@ Explore two features (gene, metadata, etc.) and its relation to variations of cl
 
 #### Options: All of the options here are the same as the Single Marker View with the following field as an option.
 ![](./double_marker.png) 
-- Secondary Numeric: This, in combination with the Primary Numeric field enables a user to explore two Genes, Numeric Metadata, or PCs based on the value selected for ‘Numeric Analysis Type’.
+- Secondary Numeric: This, in combination with the Primary Numeric field, enables a user to explore two Genes, Numeric Metadata, or PCs based on the value selected for ‘Numeric Analysis Type’.
 
 #### Graphs:
 - The first plot is a tSNE that is colored based on the Primary Numeric and Secondary Numeric selection. 
