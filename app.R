@@ -5,7 +5,7 @@ library(tidyr)
 library(dplyr)
 
 
-aggregate <- readRDS('Zhang_Seurat_UCD_blood.rds')
+aggregate <- readRDS('rds_file.rds')
 #aggregate
 genes = aggregate@assays$RNA
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
