@@ -4,12 +4,14 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 
-load('experiment_merged.RData')
-genes = experiment.merged@assays$RNA
-meta_nums <- colnames(dplyr::select_if(experiment.merged@meta.data, is.numeric))
-meta_cats <- colnames(dplyr::select_if(experiment.merged@meta.data, is.factor))
+
+aggregate <- readRDS('Zhang_Seurat_UCD_blood.rds')
+#aggregate
+genes = aggregate@assays$RNA
+meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
+meta_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
 pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
-agg_cats <- colnames(dplyr::select_if(experiment.merged@meta.data, is.factor))
+agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
 
 
 server = function(input, output, session){
@@ -54,7 +56,7 @@ server = function(input, output, session){
   # Marker Plot Double
   output$MarkerGenePlot <- renderPlot({
     FeaturePlot(
-      experiment.merged,
+      aggregate,
       c(input$numeric, input$numeric2), blend=TRUE
     )
   })
@@ -62,40 +64,40 @@ server = function(input, output, session){
   # Marker Plot Single
   output$MarkerGenePlotSingle <- renderPlot({
     FeaturePlot(
-      experiment.merged,
+      aggregate,
       c(input$numeric_single)
     )
   })
   
   # Double Feature Categorical Feature Plot
   output$CategoricalPlot <- renderPlot({
-    DimPlot(object = experiment.merged, group.by=input$categorical, pt.size=0.5, do.label = TRUE, reduction = "tsne", label = T)
+    DimPlot(object = aggregate, group.by=input$categorical, pt.size=0.5, do.label = TRUE, reduction = "tsne", label = T)
   })
 
   # Single Feature Categorical Feature Plot
   output$CategoricalPlotSingle <- renderPlot({
-    DimPlot(object = experiment.merged, group.by=input$categorical_single, pt.size=0.5, do.label = TRUE, reduction = "tsne", label = T)
+    DimPlot(object = aggregate, group.by=input$categorical_single, pt.size=0.5, do.label = TRUE, reduction = "tsne", label = T)
   })
   
   # Double Feature Violin Plot
   output$ViolinPlot <- renderPlot({
-    Idents(experiment.merged) <- input$categorical
-    VlnPlot(object =  experiment.merged, features = c(input$numeric, input$numeric2), pt.size = 0.05)
+    Idents(aggregate) <- input$categorical
+    VlnPlot(object =  aggregate, features = c(input$numeric, input$numeric2), pt.size = 0.05)
   })
 
   # Single Feature Violin Plot
   output$ViolinPlotSingle <- renderPlot({
-    Idents(experiment.merged) <- input$categorical
-    VlnPlot(object =  experiment.merged, features = c(input$numeric_single), pt.size = 0.05)
+    Idents(aggregate) <- input$categorical_single
+    VlnPlot(object =  aggregate, features = c(input$numeric_single), pt.size = 0.05)
   })
   
   # Marker Set Plot
   output$MarkerSet <- renderPlot({
-    Idents(experiment.merged) <- input$categorical_b
+    Idents(aggregate) <- input$categorical_b
     markers = input$numeric_b
     expr.cutoff = 3
-    widedat <- FetchData(experiment.merged, markers)
-    widedat$Cluster <- Idents(experiment.merged)
+    widedat <- FetchData(aggregate, markers)
+    widedat$Cluster <- Idents(aggregate)
     longdat <- gather(widedat, key = "Gene", value = "Expression", -Cluster)
     longdat$Is.Expressed <- ifelse(longdat$Expression > expr.cutoff, 1, 0)
     longdat$Cluster <- factor(longdat$Cluster)
@@ -181,8 +183,8 @@ ui <- fluidPage(
                    tabPanel("Documentation", value=-999,
                             mainPanel(width = 12,
                               br(),
-                              includeMarkdown("docs/testing.md"),
-                              includeMarkdown("docs/todo.md")
+                              #includeMarkdown("docs/testing.md")
+                              includeMarkdown("README.md")
                             )
                    ),
                    
@@ -249,3 +251,5 @@ ui <- fluidPage(
 
 
 shinyApp(ui, server)
+
+
