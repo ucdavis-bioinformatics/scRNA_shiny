@@ -22,7 +22,7 @@ server = function(input, output, session){
     mydata
   })
   
-  outVar = reactive({
+  outVar2 = reactive({
     if (input$dataset_single == 'Genes'){mydata=row.names(genes)}
     else if (input$dataset_single == 'Numeric Metadata') {mydata=meta_nums}
     else if (input$dataset_single == 'PCs') {mydata=pcs}
@@ -41,12 +41,12 @@ server = function(input, output, session){
   
   observe({
     updateSelectInput(session, "numeric_b",
-                      choices = outVar()
+                      choices = row.names(genes)
   )})
   
   observe({
     updateSelectInput(session, "numeric_single",
-                      choices = outVar()
+                      choices = outVar2()
     )})
   
   # formulaText <- reactive({
@@ -94,14 +94,16 @@ server = function(input, output, session){
   # Marker Set Plot
   output$MarkerSet <- renderPlot({
     Idents(aggregate) <- input$categorical_b
+    print(input$numeric_b)
     markers = input$numeric_b
     expr.cutoff = 3
     widedat <- FetchData(aggregate, markers)
+    #print(widedat)
     widedat$Cluster <- Idents(aggregate)
     longdat <- gather(widedat, key = "Gene", value = "Expression", -Cluster)
     longdat$Is.Expressed <- ifelse(longdat$Expression > expr.cutoff, 1, 0)
     longdat$Cluster <- factor(longdat$Cluster)
-    longdat$Gene <- factor(longdat$Gene)
+    longdat$Gene <- factor(longdat$Gene, levels = markers)
 
     # Need to summarize into average expression, pct expressed (which is also an average)
     plotdat <- group_by(longdat, Gene, Cluster) %>% summarize(`Percentage of Expressed Cells` = mean(Is.Expressed), `Mean Expression` = mean(Expression))
@@ -114,64 +116,6 @@ server = function(input, output, session){
   }, height = 1000)
 
 }
-
-# ui <- fluidPage(
-#   
-#   # App title ----
-#   titlePanel("scRNA Seurat Analysis"),
-#   
-#   # Sidebar layout with input and output definitions ----
-#   sidebarLayout(
-#     
-#     # Sidebar panel for inputs ----
-#     sidebarPanel(
-#         conditionalPanel(condition = "input.tabselected == -999",
-#                 selectInput("dataset", "Numeric Analysis Type:",
-#                             c('Genes', 'Numeric Metadata','PCs')),
-#                 selectInput("categorical", "Identity:",
-#                             c(meta_cats)),
-#                 selectInput("numeric", "Primary Numeric:", ""),
-# 
-#                 selectInput('numeric2', 'Secondary Numeric', "")
-#         ),
-# 
-#         conditionalPanel(condition = "input.tabselected == 2",
-#                          selectInput("categorical_b", "Identity:",
-#                                      c(agg_cats)),
-#                          selectInput("numeric_b", "Primary Numeric:", "", multiple=TRUE)
-#          ),
-#         conditionalPanel(condition = "input.tabselected == 3")
-#     ),
-# 
-#     # Main panel for displaying outputs ----
-#     mainPanel(
-#       
-#       # Output: Tabset w/ plot, summary, and table ----
-#       navbarPage("My application",
-#                   tabPanel("Marker Genes (TSNE)", value=-999,
-#                                #h3(textOutput("caption")),
-#                                plotOutput("MarkerGenePlot"),
-#                                plotOutput("ViolinPlot"),
-#                                #h3(textOutput("caption2")),
-#                                plotOutput("CategoricalPlot")
-#                                #h3(textOutput("caption3")),
-#                            ),
-#                   
-#                   tabPanel("Marker Set (Grid)", value=2,
-#                                plotOutput("MarkerSet")
-#                           ),
-# 
-#                   tabPanel("Documentation", value=3,
-#                            includeMarkdown("docs/testing.md"),
-#                            includeMarkdown("docs/todo.md")
-#                          ),
-#                   
-#                   id = "tabselected"
-#       )
-#     )
-#   )
-# )
-
 
 
 ui <- fluidPage(
