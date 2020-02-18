@@ -3,6 +3,7 @@ library(Seurat)
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+library(markdown)
 
 
 aggregate <- readRDS('rds_file.rds')
@@ -32,18 +33,18 @@ server = function(input, output, session){
   observe({
     updateSelectInput(session, "numeric",
                       choices = outVar()
-  )})
+    )})
   
   observe({
     updateSelectInput(session, "numeric2",
                       choices = outVar()
-  )})
+    )})
   
   # the 
   observe({
     updateSelectInput(session, "numeric_b",
                       choices = row.names(genes)
-  )})
+    )})
   
   observe({
     updateSelectInput(session, "numeric_single",
@@ -53,7 +54,7 @@ server = function(input, output, session){
   # formulaText <- reactive({
   #   paste("Marker Gene ~", input$numeric)
   # })
-
+  
   # Marker Plot Double
   output$MarkerGenePlot <- renderPlot({
     FeaturePlot(
@@ -61,7 +62,7 @@ server = function(input, output, session){
       c(input$numeric, input$numeric2), blend=TRUE
     )
   })
-
+  
   # Marker Plot Single
   output$MarkerGenePlotSingle <- renderPlot({
     FeaturePlot(
@@ -74,7 +75,7 @@ server = function(input, output, session){
   output$CategoricalPlot <- renderPlot({
     DimPlot(object = aggregate, group.by=input$categorical, pt.size=0.5, do.label = TRUE, reduction = "tsne", label = T)
   })
-
+  
   # Single Feature Categorical Feature Plot
   output$CategoricalPlotSingle <- renderPlot({
     DimPlot(object = aggregate, group.by=input$categorical_single, pt.size=0.5, do.label = TRUE, reduction = "tsne", label = T)
@@ -82,14 +83,13 @@ server = function(input, output, session){
   
   # Double Feature Violin Plot
   output$ViolinPlot <- renderPlot({
-    Idents(aggregate) <- input$categorical
-    VlnPlot(object =  aggregate, features = c(input$numeric, input$numeric2), pt.size = 0.05)
+    VlnPlot(object =  aggregate, group.by=input$categorical, features = c(input$numeric, input$numeric2), pt.size = 0.05)
   })
-
+  
   # Single Feature Violin Plot
   output$ViolinPlotSingle <- renderPlot({
     Idents(aggregate) <- input$categorical_single
-    VlnPlot(object =  aggregate, features = c(input$numeric_single), pt.size = 0.05)
+    VlnPlot(object =  aggregate, group.by=input$categorical_single, features = c(input$numeric_single), pt.size = 0.05)
   })
   
   # Marker Set Plot
@@ -105,7 +105,7 @@ server = function(input, output, session){
     longdat$Is.Expressed <- ifelse(longdat$Expression > expr.cutoff, 1, 0)
     longdat$Cluster <- factor(longdat$Cluster)
     longdat$Gene <- factor(longdat$Gene, levels = markers)
-
+    
     # Need to summarize into average expression, pct expressed (which is also an average)
     plotdat <- group_by(longdat, Gene, Cluster) %>% summarize(`Percentage of Expressed Cells` = mean(Is.Expressed), `Mean Expression` = mean(Expression))
     ggplot(plotdat, aes(x = Gene, y = Cluster)) +
@@ -113,9 +113,9 @@ server = function(input, output, session){
       labs(size = "Percentage\nof Expressed\nCells", col = "Mean\nExpression", x = NULL) +
       scale_color_gradient(low = "grey", high = "slateblue4") + theme_grey(base_size = 15) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  # }, height = 1000, width = 900 )
+    # }, height = 1000, width = 900 )
   }, height = 1000)
-
+  
 }
 
 
@@ -127,46 +127,46 @@ ui <- fluidPage(
                  tabsetPanel(
                    tabPanel("Documentation", value=-999,
                             mainPanel(width = 12,
-                              br(),
-                              #includeMarkdown("docs/testing.md")
-                              includeMarkdown("README.md")
+                                      br(),
+                                      #includeMarkdown("docs/testing.md")
+                                      includeMarkdown("README.md")
                             )
                    ),
                    
                    tabPanel("Double Marker", value=2,
-                                br(),
-                                div(style="display: inline-block;vertical-align:top; width: 24%;",
-                                    selectInput("dataset", "Numeric Analysis Type:",
+                            br(),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("dataset", "Numeric Analysis Type:",
                                             c('Genes', 'Numeric Metadata','PCs'))),
-                                div(style="display: inline-block;vertical-align:top; width: 24%;",
-                                    selectInput("categorical", "Identity:",
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("categorical", "Identity:",
                                             c(meta_cats))),
-                                div(style="display: inline-block;vertical-align:top; width: 24%;",
-                                    selectInput("numeric", "Primary Numeric:", "")),
-  
-                                div(style="display: inline-block;vertical-align:top; width: 24%;",
-                                    selectInput('numeric2', 'Secondary Numeric', "")),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("numeric", "Primary Numeric:", "")),
                             
-                              mainPanel(width = 12,
-                                 br(),
-                                 br(),
-                                 #h3(textOutput("caption")),
-                                 plotOutput("MarkerGenePlot"),
-                                 plotOutput("ViolinPlot"),
-                                 plotOutput("CategoricalPlot")
-                              )
-                          ),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput('numeric2', 'Secondary Numeric', "")),
+                            
+                            mainPanel(width = 12,
+                                      br(),
+                                      br(),
+                                      #h3(textOutput("caption")),
+                                      plotOutput("MarkerGenePlot"),
+                                      plotOutput("ViolinPlot"),
+                                      plotOutput("CategoricalPlot")
+                            )
+                   ),
                    tabPanel("Single Marker", value=3,
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
-                            selectInput("dataset_single", "Numeric Analysis Type:",
-                                        c('Genes', 'Numeric Metadata','PCs'))),
+                                selectInput("dataset_single", "Numeric Analysis Type:",
+                                            c('Genes', 'Numeric Metadata','PCs'))),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("categorical_single", "Identity:",
                                             c(meta_cats))),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("numeric_single", "Primary Numeric:", "")),
-
+                            
                             mainPanel(width = 12,
                                       br(),
                                       br(),
@@ -176,18 +176,18 @@ ui <- fluidPage(
                                       plotOutput("CategoricalPlotSingle")
                             )
                    ),
-                  tabPanel("Marker Set (Grid)", value=4,
+                   tabPanel("Marker Set (Grid)", value=4,
                             br(),
                             selectInput("categorical_b", "Identity:",
                                         c(agg_cats)),
                             selectInput("numeric_b", "Primary Numeric:", "", multiple=TRUE),
-                             mainPanel(width = 12,
-                                br(),
-                                br(),
-                                plotOutput("MarkerSet")
-                             )
-                          ),
-                  id = "tabselected"
+                            mainPanel(width = 12,
+                                      br(),
+                                      br(),
+                                      plotOutput("MarkerSet")
+                            )
+                   ),
+                   id = "tabselected"
                  )
     ),
     mainPanel(width = 12)
@@ -196,5 +196,3 @@ ui <- fluidPage(
 
 
 shinyApp(ui, server)
-
-
