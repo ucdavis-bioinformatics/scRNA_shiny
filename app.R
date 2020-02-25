@@ -1,13 +1,12 @@
 library(shiny)
 library(Seurat)
 library(ggplot2)
-library(tidyr)
 library(dplyr)
 library(markdown)
 
 
 aggregate <- readRDS('rds_file.rds')
-#aggregate
+#load('cluster_sequence_Seurat_object.RData')
 genes = aggregate@assays$RNA
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
 meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)))
