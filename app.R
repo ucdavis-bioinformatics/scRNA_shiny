@@ -3,9 +3,10 @@ library(Seurat)
 library(ggplot2)
 library(dplyr)
 library(markdown)
+library(tidyr)
 
 
-aggregate <- readRDS('rds_file.rds')
+aggregate <- readRDS('Zhang_Seurat_UCD_blood.rds')
 #load('cluster_sequence_Seurat_object.RData')
 genes = aggregate@assays$RNA
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
