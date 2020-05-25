@@ -4,7 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(markdown)
 
-aggregate <- readRDS('part5.rds')
+aggregate <- readRDS('../../part5.rds')
 genes = aggregate@assays$RNA
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
 meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)))
