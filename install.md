@@ -55,7 +55,7 @@
 6. File > Open project in Rstudio. Then choose wherever you moved this folder. 
 ![](.install_images/open_project.png)
 
-7. Move the file of interest (.rds) supplied to you to this same directory. Then change the highligted line to be the name of the your file.
+7. Move the file of interest (.rds) supplied to you to this same directory (likely from bioshare). Then change the highligted line to be the name of the your file.
 ![](.install_images/line_change.png)
 (finally click run app at the top of the page after clicking on the app.R file of the right hand side of the GUI)
 ![](.install_images/run_app.png)

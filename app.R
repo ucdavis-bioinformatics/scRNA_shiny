@@ -3,16 +3,13 @@ library(Seurat)
 library(ggplot2)
 library(dplyr)
 library(markdown)
-library(tidyr)
 
-
-#experiment.aggregate <- readRDS('Zhang_Seurat_UCD_blood.rds')
-load('final_Seurat_object_res05.RData')
-genes = experiment.aggregate@assays$RNA
-meta_nums <- colnames(dplyr::select_if(experiment.aggregate@meta.data, is.numeric))
-meta_cats <- c(colnames(dplyr::select_if(experiment.aggregate@meta.data, is.character)), colnames(dplyr::select_if(experiment.aggregate@meta.data, is.factor)))
+aggregate <- readRDS('part5.rds')
+genes = aggregate@assays$RNA
+meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
+meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)))
 pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
-agg_cats <- colnames(dplyr::select_if(experiment.aggregate@meta.data, is.factor))
+agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
 
 
 server = function(input, output, session){
@@ -58,7 +55,7 @@ server = function(input, output, session){
   # Marker Plot Double
   output$MarkerGenePlot <- renderPlot({
     FeaturePlot(
-      experiment.aggregate,
+      aggregate,
       c(input$numeric, input$numeric2), blend=TRUE
     )
   })
@@ -66,41 +63,41 @@ server = function(input, output, session){
   # Marker Plot Single
   output$MarkerGenePlotSingle <- renderPlot({
     FeaturePlot(
-      experiment.aggregate,
+      aggregate,
       c(input$numeric_single)
     )
   })
   
   # Double Feature Categorical Feature Plot
   output$CategoricalPlot <- renderPlot({
-    DimPlot(object = experiment.aggregate, group.by=input$categorical, pt.size=0.5, reduction = "tsne", label = T)
+    DimPlot(object = aggregate, group.by=input$categorical, pt.size=0.5, reduction = "tsne", label = T)
   })
   
   # Single Feature Categorical Feature Plot
   output$CategoricalPlotSingle <- renderPlot({
-    DimPlot(object = experiment.aggregate, group.by=input$categorical_single, pt.size=0.5, reduction = "tsne", label = T)
+    DimPlot(object = aggregate, group.by=input$categorical_single, pt.size=0.5, reduction = "tsne", label = T)
   })
   
   # Double Feature Violin Plot
   output$ViolinPlot <- renderPlot({
-    VlnPlot(object =  experiment.aggregate, group.by=input$categorical, features = c(input$numeric, input$numeric2), pt.size = 0.05)
+    VlnPlot(object =  aggregate, group.by=input$categorical, features = c(input$numeric, input$numeric2), pt.size = 0.05)
   })
   
   # Single Feature Violin Plot
   output$ViolinPlotSingle <- renderPlot({
-    Idents(experiment.aggregate) <- input$categorical_single
-    VlnPlot(object =  experiment.aggregate, group.by=input$categorical_single, features = c(input$numeric_single), pt.size = 0.05)
+    Idents(aggregate) <- input$categorical_single
+    VlnPlot(object =  aggregate, group.by=input$categorical_single, features = c(input$numeric_single), pt.size = 0.05)
   })
   
   # Marker Set Plot
   output$MarkerSet <- renderPlot({
-    Idents(experiment.aggregate) <- input$categorical_b
+    Idents(aggregate) <- input$categorical_b
     print(input$numeric_b)
     markers = input$numeric_b
     expr.cutoff = 3
-    widedat <- FetchData(experiment.aggregate, markers)
+    widedat <- FetchData(aggregate, markers)
     #print(widedat)
-    widedat$Cluster <- Idents(experiment.aggregate)
+    widedat$Cluster <- Idents(aggregate)
     longdat <- gather(widedat, key = "Gene", value = "Expression", -Cluster)
     longdat$Is.Expressed <- ifelse(longdat$Expression > expr.cutoff, 1, 0)
     longdat$Cluster <- factor(longdat$Cluster)
