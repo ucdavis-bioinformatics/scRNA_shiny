@@ -3,6 +3,7 @@ library(Seurat)
 library(ggplot2)
 library(dplyr)
 library(markdown)
+library(tidyr)
 
 # Some initial setup:
 # take in the file, get list of genes, get metadata numbers and categories, get pcs 1-9, and factors..
