@@ -69,7 +69,14 @@ server = function(input, output, session){
     updateSelectInput(session, "numeric_single",
                       choices = outVar_single()
     )})
-  
+
+  # Cluster Tree identity
+  observe({
+    updateSelectInput(session, "identity_tree",
+                      choices = meta_cats
+    )})
+
+
   # Marker Plot Double
   output$MarkerGenePlot <- renderPlot({
     FeaturePlot(
@@ -79,7 +86,7 @@ server = function(input, output, session){
       reduction=input$reduction_double
     )
   })
-  
+
   # Marker Plot Single
   output$MarkerGenePlotSingle <- renderPlot({
     FeaturePlot(
@@ -88,28 +95,37 @@ server = function(input, output, session){
       reduction=input$reduction_single
     )
   })
-  
+
   # Double Feature Categorical Feature Plot
   output$CategoricalPlot <- renderPlot({
     DimPlot(object = aggregate, group.by=input$categorical, pt.size=0.5, reduction = input$reduction_double, label = T)
   })
-  
+
   # Single Feature Categorical Feature Plot
   output$CategoricalPlotSingle <- renderPlot({
     DimPlot(object = aggregate, group.by=input$categorical_single, pt.size=0.5, reduction = input$reduction_single, label = T)
   })
-  
+
   # Double Feature Violin Plot
   output$ViolinPlot <- renderPlot({
     VlnPlot(object =  aggregate, group.by=input$categorical, features = c(input$numeric, input$numeric2), pt.size = 0.05)
   })
-  
+
   # Single Feature Violin Plot
   output$ViolinPlotSingle <- renderPlot({
     Idents(aggregate) <- input$categorical_single
     VlnPlot(object =  aggregate, group.by=input$categorical_single, features = c(input$numeric_single), pt.size = 0.05)
   })
-  
+
+  # Cluster Tree Plot
+  output$ClusterTree <- renderPlot({
+    Idents(aggregate) <- input$identity_tree
+    aggregate <- BuildClusterTree(
+      aggregate, dims = use.pcs)
+    PlotClusterTree(aggregate)
+  })
+
+
   # Marker Set Plot
   output$MarkerSet <- renderPlot({
     Idents(aggregate) <- input$categorical_b
@@ -122,7 +138,7 @@ server = function(input, output, session){
     longdat$Is.Expressed <- ifelse(longdat$Expression > expr.cutoff, 1, 0)
     longdat$Cluster <- factor(longdat$Cluster)
     longdat$Gene <- factor(longdat$Gene, levels = markers)
-    
+
     # Need to summarize into average expression, pct expressed (which is also an average)
     plotdat <- group_by(longdat, Gene, Cluster) %>% summarize(`Percentage of Expressed Cells` = mean(Is.Expressed), `Mean Expression` = mean(Expression))
     ggplot(plotdat, aes(x = Gene, y = Cluster)) +
@@ -132,13 +148,13 @@ server = function(input, output, session){
       theme(axis.text.x = element_text(angle = 90, hjust = 1))
     # }, height = 1000, width = 900 )
   }, height = 1000)
-  
+
 }
 
 
 ui <- fluidPage(
-  
-  titlePanel("scRNA Seurat Analysis"), 
+
+  titlePanel("scRNA Seurat Analysis"),
   sidebarLayout(
     sidebarPanel(width = 12,
                  tabsetPanel(
@@ -149,7 +165,7 @@ ui <- fluidPage(
                                       includeMarkdown("README.md")
                             )
                    ),
-                   
+
                    tabPanel("Double Marker", value=2,
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 19%;",
@@ -163,10 +179,10 @@ ui <- fluidPage(
                                             c(meta_cats))),
                             div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput("numeric", "Primary Numeric:", "")),
-                            
+
                             div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput('numeric2', 'Secondary Numeric', "")),
-                            
+
                             mainPanel(width = 12,
                                       br(),
                                       br(),
@@ -189,7 +205,7 @@ ui <- fluidPage(
                                             c(meta_cats))),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("numeric_single", "Primary Numeric:", "")),
-                            
+
                             mainPanel(width = 12,
                                       br(),
                                       br(),
@@ -210,12 +226,27 @@ ui <- fluidPage(
                                       plotOutput("MarkerSet")
                             )
                    ),
+
+                   tabPanel("Cluster Tree", value=5,
+                            br(),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("identity_tree", "Identity:",
+                                            c(meta_cats))),
+                            mainPanel(width = 12,
+                                      br(),
+                                      br(),
+                                      #h3(textOutput("caption")),
+                                      plotOutput("ClusterTree"),
+                            )
+                   ),
                    id = "tabselected"
                  )
     ),
     mainPanel(width = 12)
   )
 )
+
+# Potential to do, add DimPlot or HeatMap
 
 
 shinyApp(ui, server)
