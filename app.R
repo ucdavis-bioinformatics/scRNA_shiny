@@ -4,59 +4,79 @@ library(ggplot2)
 library(dplyr)
 library(markdown)
 
+# Some initial setup:
+# take in the file, get list of genes, get metadata numbers and categories, get pcs 1-9, and factors..
 aggregate <- readRDS('../../part5.rds')
 genes = aggregate@assays$RNA
+reductions <- attributes(aggregate@reductions)
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
 meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)))
 pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
 agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
+# TODO get reduction types as a list to choose from
 
-
+# Main function of the program
 server = function(input, output, session){
-  outVar = reactive({
+
+  # update values based on input from ui
+  outVar_double = reactive({
     if (input$dataset == 'Genes'){mydata=row.names(genes)}
     else if (input$dataset == 'Numeric Metadata') {mydata=meta_nums}
     else if (input$dataset == 'PCs') {mydata=pcs}
     mydata
   })
-  
-  outVar2 = reactive({
+
+  # update values based on input from ui
+  outVar_single = reactive({
     if (input$dataset_single == 'Genes'){mydata=row.names(genes)}
     else if (input$dataset_single == 'Numeric Metadata') {mydata=meta_nums}
     else if (input$dataset_single == 'PCs') {mydata=pcs}
     mydata
   })
-  
+
+  # Reduction Type for the Single Marker Plot
+  observe({
+    updateSelectInput(session, "reduction_single",
+                      choices = reductions
+    )})
+
+  # Reduction Type for the Double Marker Plot
+  observe({
+    updateSelectInput(session, "reduction_double",
+                      choices = reductions
+    )})
+
+  # Primary numeric value in the double marker plot
   observe({
     updateSelectInput(session, "numeric",
-                      choices = outVar()
+                      choices = outVar_double()
     )})
-  
+
+  # Secondary numeric value in the double marker plot
   observe({
     updateSelectInput(session, "numeric2",
-                      choices = outVar()
+                      choices = outVar_double()
     )})
-  
-  # the 
+
+  # Numeric input list for the marker set (multiple =TRUE)
   observe({
     updateSelectInput(session, "numeric_b",
                       choices = row.names(genes)
     )})
-  
+
+  # Only numeric input for the single marker plot
   observe({
     updateSelectInput(session, "numeric_single",
-                      choices = outVar2()
+                      choices = outVar_single()
     )})
-  
-  # formulaText <- reactive({
-  #   paste("Marker Gene ~", input$numeric)
-  # })
   
   # Marker Plot Double
   output$MarkerGenePlot <- renderPlot({
     FeaturePlot(
       aggregate,
-      c(input$numeric, input$numeric2), blend=TRUE
+      c(input$numeric, input$numeric2),
+      blend=TRUE,
+      reduction=input$reduction_double
     )
   })
   
@@ -64,18 +84,19 @@ server = function(input, output, session){
   output$MarkerGenePlotSingle <- renderPlot({
     FeaturePlot(
       aggregate,
-      c(input$numeric_single)
+      c(input$numeric_single),
+      reduction=input$reduction_single
     )
   })
   
   # Double Feature Categorical Feature Plot
   output$CategoricalPlot <- renderPlot({
-    DimPlot(object = aggregate, group.by=input$categorical, pt.size=0.5, reduction = "tsne", label = T)
+    DimPlot(object = aggregate, group.by=input$categorical, pt.size=0.5, reduction = input$reduction_double, label = T)
   })
   
   # Single Feature Categorical Feature Plot
   output$CategoricalPlotSingle <- renderPlot({
-    DimPlot(object = aggregate, group.by=input$categorical_single, pt.size=0.5, reduction = "tsne", label = T)
+    DimPlot(object = aggregate, group.by=input$categorical_single, pt.size=0.5, reduction = input$reduction_single, label = T)
   })
   
   # Double Feature Violin Plot
@@ -92,7 +113,6 @@ server = function(input, output, session){
   # Marker Set Plot
   output$MarkerSet <- renderPlot({
     Idents(aggregate) <- input$categorical_b
-    print(input$numeric_b)
     markers = input$numeric_b
     expr.cutoff = 3
     widedat <- FetchData(aggregate, markers)
@@ -132,16 +152,19 @@ ui <- fluidPage(
                    
                    tabPanel("Double Marker", value=2,
                             br(),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput("dataset", "Numeric Analysis Type:",
                                             c('Genes', 'Numeric Metadata','PCs'))),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 19%;",
+                                selectInput("reduction_double", "Reduction:",
+                                            c(reductions))),
+                            div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput("categorical", "Identity:",
                                             c(meta_cats))),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput("numeric", "Primary Numeric:", "")),
                             
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput('numeric2', 'Secondary Numeric', "")),
                             
                             mainPanel(width = 12,
@@ -158,6 +181,9 @@ ui <- fluidPage(
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("dataset_single", "Numeric Analysis Type:",
                                             c('Genes', 'Numeric Metadata','PCs'))),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("reduction_single", "Reduction:",
+                                            c(reductions))),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("categorical_single", "Identity:",
                                             c(meta_cats))),
