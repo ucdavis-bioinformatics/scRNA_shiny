@@ -4,9 +4,9 @@
 
     https://rstudio.com/products/rstudio/download/#download
 
-2. Install R version 3.6.2
+2. Install R version 4.0.0
     - windows: https://cran.r-project.org/bin/windows/base/
-    - macosx: https://cran.r-project.org/bin/macosx/R-3.6.2.pkg
+    - macosx: https://cran.r-project.org/bin/macosx/R-4.0.0.pkg
     - linux: `sudo apt install r-base`
 
 3. Open RStudio and point it to the newest version of R (only applicable if you have an old version of R installed)
@@ -26,6 +26,11 @@
     }
     library(markdown)
     
+    if (!any(rownames(installed.packages()) == "tidyr")){
+      install.packages("tidyr")
+    }
+    library(tidyr)
+
     if (!any(rownames(installed.packages()) == "ggplot2")){
       if (!requireNamespace("BiocManager", quietly = TRUE))
           install.packages("BiocManager")

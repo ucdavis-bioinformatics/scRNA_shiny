@@ -1,12 +1,3 @@
-# scRNA-seq analysis application
----
-# Dataset Information:
-- Dataset name: 
-- Owner: 
-- Sharing with 1 user(s) and 1 group(s) 
-- Description: 
-- File size: 
-
 ---
 Shiny App Tutorial
 ---
@@ -15,7 +6,7 @@ Shiny App Tutorial
 Explore a single feature (gene, metadata, etc.) and its relation to variations of clustering or on a per sample basis. 
 
 #### Options: 
-![](./docs/single_marker.png)
+![](.README_images/single_marker.png)
 - Numeric Analysis Type: [Genes, Numeric Metadata, PCs]
     - Genes: Are you interested in looking at genes or interest such as marker genes?
     - Numeric Metadata: Are you interested in looking at metadata features such as: 
@@ -23,6 +14,7 @@ Explore a single feature (gene, metadata, etc.) and its relation to variations o
         - number of total unique genes or ‘features’ expressed (nFeature_RNA)
         - Total number of genes expressed or total count of RNA (nCount_RNA)
     - PCs: Are you interested in exploring the principal components that contribute to the tSNE plot seen?
+- Reduction Type: [PCA, TSNE, UMAP]
 - Identity: 
     - Orig.ident: This will color the graph based on the names of the samples processed. 
     - RNA_snn_res.0.XX: This will color the graph based on groupings produced by Seurat as various resolutions.
@@ -31,35 +23,32 @@ Explore a single feature (gene, metadata, etc.) and its relation to variations o
 - Primary Numeric: This will change to be Genes, Numeric Metadata, or PCs based on the value selected for ‘Numeric Analysis Type’.
 
 #### Graphs:
-- The first plot is a tSNE that is colored based on the Primary Numeric selection. 
+- The first plot is a tSNE/PCA/UMAP that is colored based on the Primary Numeric selection. 
 - The second plot is a violin plot that displays the Identity selection on the X-axis and the Primary Numeric on the Y-axis. 
-- The third plot is the tSNE that is colored based on the Identity selection. 
-
-Having trouble understanding what a tSNE plot represents?
-- tSNE helpful video: https://www.youtube.com/watch?v=NEaUSP4YerM
+- The third plot is the tSNE/PCA/UMAP that is colored based on the Identity selection. 
 
 ---
 ### Double Marker View:
 Explore two features (gene, metadata, etc.) and its relation to variations of clustering or on a per sample basis. 
 
 #### Options: All of the options here are the same as the Single Marker View with the following field as an option.
-![](./docs/double_marker.png) 
-- Secondary Numeric: This, in combination with the Primary Numeric field enables a user to explore two Genes, Numeric Metadata, or PCs based on the value selected for ‘Numeric Analysis Type’.
+![](.README_images/double_marker.png)
+
+- Secondary Numeric: This, in combination with the Primary Numeric field enables a user to explore two Genes, 
+Numeric Metadata, or PCs based on the value selected for ‘Numeric Analysis Type’.
 
 #### Graphs:
 - The first plot is a tSNE that is colored based on the Primary Numeric and Secondary Numeric selection. 
-- The second plot’s first tile is a violin plot that displays the Identity selection on the X-axis and the Primary Numeric on the Y-axis. The second plot’s second tile is the same as the first tile but is based on the selection of the Secondary Numeric field. 
+- The second plot’s first tile is a violin plot that displays the Identity selection on the X-axis and the Primary
+Numeric on the Y-axis. The second plot’s second tile is the same as the first tile but is based on the selection of the Secondary Numeric field. 
 - The third plot is the tSNE that is colored based on the Identity selection. 
-
-Having trouble understanding what a tSNE plot represents?
-- tSNE helpful video: https://www.youtube.com/watch?v=NEaUSP4YerM
 
 ---
 ### Marker Set (Grid)
 This plot helps to explore sets of genes and their relation to the identity. 
 
 #### Options:
-![](./docs/marker_set.png)
+![](.README_images/marker_set.png)
 - Identity: the same as what is described for the Single Marker View
 - Gene Selection: here you choose the set of genes you would like to explore based on the Identity selected. 
 
@@ -72,3 +61,19 @@ This plot helps to explore sets of genes and their relation to the identity.
     - High mean expression
     - High percentage of cells expressing the gene
     - Low mean expression and percentage of cells expressing the gene for the rest of the identities
+    
+
+---
+### Cluster Tree Exploration
+This plot helps to identify closest related clusters so when moving into the final analysis you have a better idea of 
+what the real cell groups are in your samples. 
+
+![](.README_images/cluster_tree.png)
+---    
+Having trouble understanding what a tSNE vs UMAP plot represents?
+- However, note that in our workflow we don't cluster on the TSNE or UMAP coordinates, 
+we cluster on the principal components and then use TSNE or UMAP for display, 
+so the difference is purely visual. 
+- tSNE helpful video: https://www.youtube.com/watch?v=NEaUSP4YerM
+- UMPA vs TSNE: https://towardsdatascience.com/tsne-vs-umap-global-structure-4d8045acba17
+
