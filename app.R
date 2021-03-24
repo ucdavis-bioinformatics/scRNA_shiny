@@ -11,10 +11,10 @@ aggregate <- readRDS('../../shiny.rds')
 genes = aggregate@assays$RNA
 reductions <- attributes(aggregate@reductions)
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
-meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)))
+meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)),colnames(dplyr::select_if(aggregate@meta.data, is.logical)))
 pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
 use.pcs <- 1:29
-agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
+#agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
 # TODO get reduction types as a list to choose from
 
 # Main function of the program
@@ -91,6 +91,8 @@ server = function(input, output, session){
                       choices = meta_cats
     )})
   
+  
+  
   # Seperated Identity
   observe({
     updateSelectInput(session, "identity_seperated",
@@ -108,7 +110,34 @@ server = function(input, output, session){
     updateSelectInput(session, "reduction_seperated",
                       choices = reductions
     )})
+
   
+  
+  # Seperated categroical Identity
+  observe({
+    updateSelectInput(session, "identity_seperated_cateogrical",
+                      choices = meta_cats
+    )})
+  
+  # Seperated categorical identity2
+  observe({
+    updateSelectInput(session, "identity2_seperated_categorical",
+                      choices = meta_cats
+    )})
+  
+  # Seperated categorical Reduction
+  observe({
+    updateSelectInput(session, "reduction_seperated_categorical",
+                      choices = reductions
+    )})
+  
+  
+    
+  # Multiple Feature Plot
+  observe({
+    updateSelectInput(session, "multiple_feature_list",
+                      choices = row.names(genes)
+    )})
   
   # Table Identity
   observe({
@@ -184,6 +213,8 @@ server = function(input, output, session){
     VlnPlot(object =  aggregate, features = c(input$numeric_single), pt.size = 0.05)
   })
   
+  
+  
   # Cluster Tree Plot
   output$ClusterTree <- renderPlot({
     Idents(aggregate) <- input$identity_tree
@@ -195,13 +226,71 @@ server = function(input, output, session){
   
   
   
+  # Multiple Feature Plot
+  output$MultipleFeaturePlot <- renderPlot({
+    FeaturePlot(
+      aggregate,
+      input$multiple_feature_list,
+      blend=FALSE,
+      reduction=input$multiple_feature_reduction,
+      ncol=4
+    )
+  })
+  
+  
+  # Multiple Feature Categorical Plot
+  output$MultipleFeatureCategoricalPlot <- renderPlot({
+    Idents(aggregate) <- input$multiple_feature_categorical_plot
+    order <- sort(levels(aggregate))
+    levels(aggregate) <- order
+    DimPlot(object = aggregate, group.by=input$multiple_feature_categorical_plot, pt.size=0.5, reduction = input$multiple_feature_reduction, label = T)
+  
+    
+    })
+  
+  
+  
+  
+  # Seperated Identity Categorical Plot
+  output$SeperatedIdentityCategorical <- renderPlot({
+    Idents(aggregate) <- input$identity_seperated_categorical
+    order <- sort(levels(aggregate))
+    levels(aggregate) <- order
+    DimPlot(aggregate, reduction=input$reduction_seperated_categorical,
+            split.by = "orig.ident", ncol=4
+    )
+  })
+  
+  # Seperated Identity 2 Categorical Plot
+  output$SeperatedIdentity2Categorical <- renderPlot({
+    Idents(aggregate) <- input$identity2_seperated_categorical
+    order <- sort(levels(aggregate))
+    levels(aggregate) <- order
+    DimPlot(aggregate, reduction=input$reduction_seperated_categorical,
+            split.by = "orig.ident", ncol=4
+    )
+  })
+  
+  # Seperated Categorical table
+  output$SeperatedCountsCategorical <- renderPlot({
+    length_data = as.data.frame(prop.table(table(eval(call('$', aggregate[[]], input$identity_seperated_categorical)), 
+                                                 eval(call('$', aggregate[[]], input$identity2_seperated_categorical))),1))
+    colnames(length_data) = c(input$identity_seperated_categorical, input$identity2_seperated_categorical, 'Freq')
+    mycol <- c("navy", "blue", "cyan", "lightcyan", "yellow", "red", "red4")
+    ggplot(length_data, aes_string(x=input$identity_seperated_categorical, y=input$identity2_seperated_categorical, fill='Freq')) + geom_tile() + scale_fill_gradientn(colours = mycol)
+  })
+  
+  
+  
+  
+  
   # Seperated Feature Plot
   output$SeperatedFeature <- renderPlot({
     Idents(aggregate) <- input$identity_seperated
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     FeaturePlot(aggregate, c(input$numeric_seperated), reduction=input$reduction_seperated,
-      split.by = "orig.ident"
+      split.by = "orig.ident", ncol=4
     )
   })
   
@@ -211,10 +300,9 @@ server = function(input, output, session){
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     DimPlot(aggregate, reduction=input$reduction_seperated,
-                split.by = "orig.ident"
+                split.by = "orig.ident", ncol=4
     )
   })
-  
   
   
   # Seperated Counts table
@@ -259,6 +347,9 @@ server = function(input, output, session){
     #as.data.frame(c(1,2))
     #as.data.frame.matrix(table(eval(call("$", aggregate, input$identity_seperated)), eval(call("$", aggregate, "orig.ident"))))
   }, width = "100%", colnames=TRUE, rownames=TRUE, digits=4)
+  
+  
+  
   
   
   # Marker Table
@@ -313,7 +404,7 @@ ui <- fluidPage(
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput("dataset", "Numeric Analysis Type:",
-                                            c('Genes', 'Numeric Metadata','PCs'))),
+                                            c('Numeric Metadata', 'Genes','PCs'))),
                             div(style="display: inline-block;vertical-align:top; width: 19%;",
                                 selectInput("reduction_double", "Reduction:",
                                             c(reductions))),
@@ -339,7 +430,7 @@ ui <- fluidPage(
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("dataset_single", "Numeric Analysis Type:",
-                                            c('Genes', 'Numeric Metadata','PCs'))),
+                                            c('Numeric Metadata', 'Genes','PCs'))),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("reduction_single", "Reduction:",
                                             c(reductions))),
@@ -361,7 +452,7 @@ ui <- fluidPage(
                    tabPanel("Marker Set (Grid)", value=4,
                             br(),
                             selectInput("categorical_b", "Identity:",
-                                        c(agg_cats)),
+                                        c(meta_cats)),
                             selectizeInput("numeric_b", "Primary Numeric (csv format works here if pasted in):", "", 
                                            options = list(
                                              delimiter = ',',
@@ -378,8 +469,32 @@ ui <- fluidPage(
                                       plotOutput("MarkerSet")
                             )
                    ),
-                   
-                   tabPanel("Cluster Tree", value=5,
+                   tabPanel("Multiple Feature Plot", value=5,
+                            br(),
+                            selectInput("multiple_feature_categorical_plot", "Identity:",
+                                        c(meta_cats)),
+                            selectizeInput("multiple_feature_list", "Primary Numeric: \n 
+                                                  - Csv format works best here if pasted in from premade lists. \n
+                                                  - Optimal for >5 and <16 input. \n
+                                                  - To be most effecient when removing entries hold SHIFT and click all, then delete.", "", 
+                                           options = list(
+                                             maxItems=16,
+                                             delimiter = ',',
+                                             create = I("function(input, callback){
+                                              return {
+                                                value: input,
+                                                text: input
+                                               };
+                                            }")),
+                                           selected = NULL, multiple = TRUE), ## and switch multiple to True,
+                            mainPanel(width = 12,
+                                      br(),
+                                      br(),
+                                      plotOutput("MultipleFeatureCategoricalPlot"),
+                                      plotOutput("MultipleFeaturePlot",  height = "1000px")
+                            )
+                   ),
+                   tabPanel("Cluster Tree", value=6,
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("identity_tree", "Identity:",
@@ -391,7 +506,7 @@ ui <- fluidPage(
                                       plotOutput("ClusterTree"),
                             )
                    ),
-                   tabPanel("Seperated Feature", value=6,
+                   tabPanel("Seperated Feature", value=7,
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("dataset_seperated", "Numeric Analysis Type:",
@@ -409,13 +524,34 @@ ui <- fluidPage(
                                       br(),
                                       br(),
                                       #h3(textOutput("caption")),
-                                      plotOutput("SeperatedFeature"),
+                                      plotOutput("SeperatedFeature", height = "500px"),
                                       plotOutput("SeperatedDim"),
                                       tableOutput("SeperatedCounts")
                                       
                             )
                    ),
-                   tabPanel("Marker Table", value=7,
+                   tabPanel("Seperated Categorical", value=8,
+                            br(),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("reduction_seperated_categorical", "Reduction:",
+                                            c(reductions))),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("identity_seperated_categorical", "Identity:",
+                                            c(meta_cats))),
+                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                                selectInput("identity2_seperated_categorical", "Secondary Identity:", "")),
+                            
+                            mainPanel(width = 12,
+                                      br(),
+                                      br(),
+                                      #h3(textOutput("caption")),
+                                      plotOutput("SeperatedIdentityCategorical", height = "500px"),
+                                      plotOutput("SeperatedIdentity2Categorical"),
+                                      plotOutput("SeperatedCountsCategorical")
+                                      
+                            )
+                   ),
+                   tabPanel("Marker Table", value=9,
                             br(),
                             div(style="display: inline-block;vertical-align:top; width: 24%;",
                                 selectInput("identity_table", "Identity:",
