@@ -6,8 +6,9 @@ library(markdown)
 library(tidyr)
 
 # Some initial setup:
+# this will not work if underscores are in the orig.ident (only for some views)
 # take in the file, get list of genes, get metadata numbers and categories, get pcs 1-9, and factors..
-aggregate <- readRDS('../../shiny.rds')
+aggregate <- readRDS('/Users/keithmitchell/Desktop/Repositories/haudenschild/keith_analysis_round2/HaudenschildRound2_celltype_LR_DIGEST.rds')
 genes = aggregate@assays$RNA
 reductions <- attributes(aggregate@reductions)
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
@@ -290,7 +291,7 @@ server = function(input, output, session){
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     FeaturePlot(aggregate, c(input$numeric_seperated), reduction=input$reduction_seperated,
-      split.by = "orig.ident", ncol=4
+      split.by = input$identity_seperated2, ncol=4
     )
   })
   
@@ -300,16 +301,20 @@ server = function(input, output, session){
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     DimPlot(aggregate, reduction=input$reduction_seperated,
-                split.by = "orig.ident", ncol=4
+                split.by = input$identity_seperated2, ncol=4
     )
+  })
+  # Seperated Violin Plot
+  output$SeperatedViolin <- renderPlot({
+    Idents(aggregate) <- input$identity_seperated
+    order <- sort(levels(aggregate))
+    levels(aggregate) <- order
+    VlnPlot(aggregate, c(input$numeric_seperated), group.by = input$identity_seperated, split.by = input$identity_seperated2, ncol=4)
   })
   
   
   # Seperated Counts table
   output$SeperatedCounts <- renderTable({
-    lab_list = c()
-    identities = c()
-    num_list = c()
     
     marker = c(input$numeric_seperated)
     Idents(aggregate) <- input$identity_seperated
@@ -323,29 +328,27 @@ server = function(input, output, session){
     else{widedat <- FetchData(aggregate, marker)}
     
     widedat$Cluster <- Idents(aggregate)
-    widedat$orig.ident=sapply(strsplit(rownames(widedat), "-"), "[", 2)
-    widedat$final <- paste(widedat$orig.ident, widedat$Cluster, sep="_")
+    widedat$orig.ident = eval(call("$", aggregate, input$identity_seperated2))
+    widedat$final = paste(widedat$orig.ident, widedat$Cluster, sep="_")
     final_object = (aggregate(widedat[, 1:2], list(widedat$final), mean)[1:2])
-    rownames(final_object) = final_object$Group.1
-    tab =t(final_object[-c(1)])
-    #tab = final_object#suppressMessages(AverageExpression(aggregate, add.ident = input$identity_seperated))
+    lab_list = widedat$orig.ident
+    identities = widedat$Cluster
     
-    for (i in names(tab[input$numeric_seperated,])){lab_list = c(lab_list,strsplit(i,'_')[[1]][1])}
-    for (i in names(tab[input$numeric_seperated,])){identities = c(identities,strsplit(i,'_')[[1]][2])}
-    for (i in tab[input$numeric_seperated,]){num_list = c(num_list,i)}
-    df = as.data.frame(pivot_wider(data.frame(identities, num_list, lab_list), names_from = 'lab_list', values_from = 'num_list'))
+    num_list = widedat[[marker]]
+    
+    # df needs to be fixed
+    tmp_df = data.frame(identities, num_list, lab_list)
+    df = as.data.frame(pivot_wider(aggregate(tmp_df[2], list(tmp_df$identities, tmp_df$lab_list), mean), names_from = Group.2, values_from = num_list))
     df[is.na(df)] <- 0
+    rownames(df) = df$Group.1
+    drops <- c("Group.1")
+    df = df[ , !(names(df) %in% drops)]
     
-    df_p = as.data.frame.matrix(prop.table((table(eval(call("$", aggregate, input$identity_seperated)), eval(call("$", aggregate, "orig.ident")))),2))
-    #df_p$identities = rownames(df_p)
-    #df_p=df_p[, !(names(df_p)) %in% c('identities')]
+    df_p = as.data.frame.matrix(prop.table((table(eval(call("$", aggregate, input$identity_seperated)), eval(call("$", aggregate, input$identity_seperated2)))),2))
     df_p=df_p/colSums(df_p)
 
-    
-    merged_final = as.data.frame.matrix(merge(df, df_p, by.x = 'identities', by.y = 'row.names', suffixes = c(".AvgExpression",".Proportion")))
+    merged_final = as.data.frame.matrix(merge(df, df_p, by.x = 'row.names', by.y = 'row.names', suffixes = c(".AvgExpression",".Proportion")))
     merged_final
-    #as.data.frame(c(1,2))
-    #as.data.frame.matrix(table(eval(call("$", aggregate, input$identity_seperated)), eval(call("$", aggregate, "orig.ident"))))
   }, width = "100%", colnames=TRUE, rownames=TRUE, digits=4)
   
   
@@ -508,16 +511,19 @@ ui <- fluidPage(
                    ),
                    tabPanel("Seperated Feature", value=7,
                             br(),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 20%;",
                                 selectInput("dataset_seperated", "Numeric Analysis Type:",
                                             c('Genes', 'Numeric Metadata','PCs'))),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 20%;",
                                 selectInput("reduction_seperated", "Reduction:",
                                             c(reductions))),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
-                                selectInput("identity_seperated", "Identity:",
+                            div(style="display: inline-block;vertical-align:top; width: 20%;",
+                                selectInput("identity_seperated", "Cell Type/Cluster:",
                                             c(meta_cats))),
-                            div(style="display: inline-block;vertical-align:top; width: 24%;",
+                            div(style="display: inline-block;vertical-align:top; width: 20%;",
+                                selectInput("identity_seperated2", "Identity:",
+                                            c(meta_cats))),
+                            div(style="display: inline-block;vertical-align:top; width: 20%;",
                                 selectInput("numeric_seperated", "Primary Numeric:", "")),
 
                             mainPanel(width = 12,
@@ -526,6 +532,7 @@ ui <- fluidPage(
                                       #h3(textOutput("caption")),
                                       plotOutput("SeperatedFeature", height = "500px"),
                                       plotOutput("SeperatedDim"),
+                                      plotOutput("SeperatedViolin", width="4000px"),
                                       tableOutput("SeperatedCounts")
                                       
                             )

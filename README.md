@@ -2,6 +2,12 @@
 Shiny App Tutorial
 ---
 
+### TODO list:
+- fix the violin plot ordering
+- sankey diagram
+
+
+
 ### Single Marker View:
 Explore a single feature (gene, metadata, etc.) and its relation to variations of clustering or on a per sample basis. 
 
