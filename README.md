@@ -1,6 +1,14 @@
 ---
 Shiny App Tutorial
 ---
+### Local Install Directions:
+1. Install docker on your computer
+2. git clone 
+3. Move in RDS file of interest.
+4. Edit the read RDS line in `app.R` file to be `/example_app/{your rds file name}`
+4. `docker-compose build`
+5. `docker-compose up`
+
 
 ### TODO list:
 - fix the violin plot ordering

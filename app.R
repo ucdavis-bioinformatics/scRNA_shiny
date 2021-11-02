@@ -8,11 +8,13 @@ library(tidyr)
 # Some initial setup:
 # this will not work if underscores are in the orig.ident (only for some views)
 # take in the file, get list of genes, get metadata numbers and categories, get pcs 1-9, and factors..
-aggregate <- readRDS('/Users/keithmitchell/Desktop/Repositories/haudenschild/keith_analysis_round2/HaudenschildRound2_celltype_LR_DIGEST.rds')
+aggregate <- readRDS('Keller_more_clusterings.rds')
 genes = aggregate@assays$RNA
 reductions <- attributes(aggregate@reductions)
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
 meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)),colnames(dplyr::select_if(aggregate@meta.data, is.logical)))
+meta_cats <- meta_cats[meta_cats != "orig.ident"]
+mysplitbydefault <- "Health"
 pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
 use.pcs <- 1:50
 #agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
@@ -258,7 +260,7 @@ server = function(input, output, session){
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     DimPlot(aggregate, reduction=input$reduction_seperated_categorical,
-            split.by = "orig.ident", ncol=4
+            split.by = mysplitbydefault, ncol=4
     )
   })
   
@@ -268,7 +270,7 @@ server = function(input, output, session){
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     DimPlot(aggregate, reduction=input$reduction_seperated_categorical,
-            split.by = "orig.ident", ncol=4
+            split.by = mysplitbydefault, ncol=4
     )
   })
   
@@ -328,10 +330,10 @@ server = function(input, output, session){
     else{widedat <- FetchData(aggregate, marker)}
     
     widedat$Cluster <- Idents(aggregate)
-    widedat$orig.ident = eval(call("$", aggregate, input$identity_seperated2))
-    widedat$final = paste(widedat$orig.ident, widedat$Cluster, sep="_")
+    widedat[[mysplitbydefault]] = eval(call("$", aggregate, input$identity_seperated2))
+    widedat$final = paste(widedat[[mysplitbydefault]], widedat$Cluster, sep="_")
     final_object = (aggregate(widedat[, 1:2], list(widedat$final), mean)[1:2])
-    lab_list = widedat$orig.ident
+    lab_list = widedat[[mysplitbydefault]]
     identities = widedat$Cluster
     
     num_list = widedat[[marker]]
