@@ -3,11 +3,14 @@ Shiny App Tutorial
 ---
 ### Local Install Directions:
 1. Install docker on your computer
-2. git clone 
+2. `git clone https://github.com/ucdavis-bioinformatics/scRNA_shiny.git`
 3. Move in RDS file of interest.
-4. Edit the read RDS line in `app.R` file to be `/example_app/{your rds file name}`
-4. `docker-compose build`
-5. `docker-compose up`
+4. Edit the read RDS line in `app.R` file to be `{your rds file name}`
+5. Edit the COPY command in the Dockerfile to be `{your rds file name}`
+
+The following two commands can be performed from the Docker GUI. For larger files go to Settings > Resources > And update the RAM to be more. 
+5. `docker build . -t scshiny`
+6. `docker run -it --rm -p 3838:3838`
 
 
 ### TODO list:
