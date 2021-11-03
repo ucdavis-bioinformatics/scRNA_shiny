@@ -6,11 +6,12 @@ Shiny App Tutorial
 2. `git clone https://github.com/ucdavis-bioinformatics/scRNA_shiny.git`
 3. Move in RDS file of interest.
 4. Edit the read RDS line in `app.R` file to be `{your rds file name}`
-5. Edit the COPY command in the Dockerfile to be `{your rds file name}`
+5. Edit the COPY command in the `Dockerfile` to be `{your rds file name}`
 
 The following two commands can be performed from the Docker GUI. For larger files go to Settings > Resources > And update the RAM to be more. 
-5. `docker build . -t scshiny`
-6. `docker run -it --rm -p 3838:3838`
+
+6. `docker build . -t scshiny`
+7. `docker run -it --rm -p 3838:3838 scshiny`
 
 
 ### TODO list:
