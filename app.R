@@ -8,15 +8,16 @@ library(tidyr)
 # Some initial setup:
 # this will not work if underscores are in the orig.ident (only for some views)
 # take in the file, get list of genes, get metadata numbers and categories, get pcs 1-9, and factors..
-aggregate <- readRDS('Keller_more_clusterings.rds')
+aggregate <- readRDS('~/Jessie/Research/Bioinfo/Gong_Q_UCD/mouse_fixed_scRNASeq_Feb_2023/Gong_aggregate_celltype_20230302.rds')
 genes = aggregate@assays$RNA
 reductions <- attributes(aggregate@reductions)
 meta_nums <- colnames(dplyr::select_if(aggregate@meta.data, is.numeric))
 meta_cats <- c(colnames(dplyr::select_if(aggregate@meta.data, is.character)), colnames(dplyr::select_if(aggregate@meta.data, is.factor)),colnames(dplyr::select_if(aggregate@meta.data, is.logical)))
 meta_cats <- meta_cats[meta_cats != "orig.ident"]
-mysplitbydefault <- "Health"
-pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
-use.pcs <- 1:50
+mysplitbydefault <- "CellType"
+#pcs <- list('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
+pcs <- c('PC_1','PC_2','PC_3','PC_4','PC_5','PC_6','PC_7','PC_8','PC_9')
+#use.pcs <- 1:50
 #agg_cats <- colnames(dplyr::select_if(aggregate@meta.data, is.factor))
 # TODO get reduction types as a list to choose from
 
@@ -25,7 +26,7 @@ server = function(input, output, session){
   
   # update values based on input from ui
   outVar_double = reactive({
-    if (input$dataset == 'Genes'){mydata=row.names(genes)}
+    if (input$dataset == 'Genes'){mydata=rownames(genes)}
     else if (input$dataset == 'Numeric Metadata') {mydata=meta_nums}
     else if (input$dataset == 'PCs') {mydata=pcs}
     mydata
@@ -33,7 +34,7 @@ server = function(input, output, session){
   
   # update values based on input from ui
   outVar_single = reactive({
-    if (input$dataset_single == 'Genes'){mydata=row.names(genes)}
+    if (input$dataset_single == 'Genes'){mydata=rownames(genes)}
     else if (input$dataset_single == 'Numeric Metadata') {mydata=meta_nums}
     else if (input$dataset_single == 'PCs') {mydata=pcs}
     mydata
@@ -41,7 +42,7 @@ server = function(input, output, session){
   
   # update values based on input from ui
   outVar_seperated = reactive({
-    if (input$dataset_seperated == 'Genes'){mydata=row.names(genes)}
+    if (input$dataset_seperated == 'Genes'){mydata=rownames(genes)}
     else if (input$dataset_seperated == 'Numeric Metadata') {mydata=meta_nums}
     else if (input$dataset_seperated == 'PCs') {mydata=pcs}
     mydata
@@ -78,8 +79,8 @@ server = function(input, output, session){
   
   # Numeric input list for the marker set (multiple =TRUE)
   observe({
-    updateSelectInput(session, "numeric_b",
-                      choices = row.names(genes)
+    updateSelectizeInput(session, "numeric_b",
+                      choices = rownames(genes), server = TRUE
     )})
   
   # Only numeric input for the single marker plot
@@ -93,7 +94,6 @@ server = function(input, output, session){
     updateSelectInput(session, "identity_tree",
                       choices = meta_cats
     )})
-  
   
   
   # Seperated Identity
@@ -138,8 +138,8 @@ server = function(input, output, session){
     
   # Multiple Feature Plot
   observe({
-    updateSelectInput(session, "multiple_feature_list",
-                      choices = row.names(genes)
+    updateSelectizeInput(session, "multiple_feature_list",
+                      choices = rownames(genes), server = TRUE
     )})
   
   # Table Identity
@@ -163,7 +163,10 @@ server = function(input, output, session){
     )})
   
 
-  
+  # Documentation
+  output$markdown <- renderUI({
+    includeMarkdown("~/Jessie/Research/Bioinfo/Packages/scRNA_shiny-master/README.md")
+  }) 
   
   # Marker Plot Double
   output$MarkerGenePlot <- renderPlot({
@@ -217,7 +220,6 @@ server = function(input, output, session){
   })
   
   
-  
   # Cluster Tree Plot
   output$ClusterTree <- renderPlot({
     Idents(aggregate) <- input$identity_tree
@@ -247,8 +249,6 @@ server = function(input, output, session){
     order <- sort(levels(aggregate))
     levels(aggregate) <- order
     DimPlot(object = aggregate, group.by=input$multiple_feature_categorical_plot, pt.size=0.5, reduction = input$multiple_feature_reduction, label = T)
-  
-    
     })
   
   
@@ -368,7 +368,7 @@ server = function(input, output, session){
   output$MarkerSet <- renderPlot({
     Idents(aggregate) <- input$categorical_b
     markers = input$numeric_b
-    expr.cutoff = 3
+    expr.cutoff = 1
     widedat <- FetchData(aggregate, markers)
     widedat$Cluster <- Idents(aggregate)
     longdat <- gather(widedat, key = "Gene", value = "Expression", -Cluster)
@@ -392,18 +392,22 @@ server = function(input, output, session){
 
 
 ui <- fluidPage(
-  
   titlePanel("scRNA Seurat Analysis"),
   sidebarLayout(
     sidebarPanel(width = 12,
                  tabsetPanel(
-                   tabPanel("Documentation", value=-999,
-                            mainPanel(width = 12,
-                                      br(),
-                                      #includeMarkdown("docs/testing.md")
-                                      includeMarkdown("README.md")
-                            )
+                   tabPanel("Documentation", value=1,
+                            uiOutput('markdown')
                    ),
+
+
+#                  tabPanel("Documentation", value=-999,
+#                           mainPanel(width = 12,
+#                                     br(),
+#                                     uiOutput('markdown')
+#                                     includeMarkdown("markdown")
+#                           )
+#                  ),
                    
                    tabPanel("Double Marker", value=2,
                             br(),
@@ -478,6 +482,8 @@ ui <- fluidPage(
                             br(),
                             selectInput("multiple_feature_categorical_plot", "Identity:",
                                         c(meta_cats)),
+                            selectInput("multiple_feature_reduction", "Reduction:",
+                                        c(reductions)),
                             selectizeInput("multiple_feature_list", "Primary Numeric: \n 
                                                   - Csv format works best here if pasted in from premade lists. \n
                                                   - Optimal for >5 and <16 input. \n
@@ -534,7 +540,7 @@ ui <- fluidPage(
                                       #h3(textOutput("caption")),
                                       plotOutput("SeperatedFeature", height = "500px"),
                                       plotOutput("SeperatedDim"),
-                                      plotOutput("SeperatedViolin", width="4000px"),
+                                      plotOutput("SeperatedViolin", width="2000px"),
                                       tableOutput("SeperatedCounts")
                                       
                             )
@@ -578,7 +584,7 @@ ui <- fluidPage(
                                       tableOutput("markers")
                             )
                    ),
-                   id = "tabselected"
+#                  id = "tabselected"
                  )
     ),
     mainPanel(width = 12)
